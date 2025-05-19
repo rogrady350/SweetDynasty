@@ -1,0 +1,40 @@
+//function runs automatically when form is submitted
+function onFormSubmit(e) {
+  //get form question row headers
+  const sheet = e.source.getSheetByName("Cake Order Sheet"); //get Sheet
+  const headers = sheet.getRange(1, 1, 1, e.values.length).getValues()[0]; //dynamically grab labels: (row1: header, column1, headerRow, numFormFields)
+
+  const data = e.values; //get answers to form questions
+
+  const storeIndex = headers.indexOf("What Location?"); //index of store
+  const storeName = storeIndex != -1 ? data[storeIndex] : "UnknownStore"; //check header. if blank fallback to unknown
+
+  const title = `${storeName} - ${new Date().toLocaleString()}`; //finle named store name + order time
+
+  //create Google Doc to hold formatted order
+  const doc = DocumentApp.create(`${title}`);
+  const body = doc.getBody(); //get body of doc to write into
+
+  //build order
+  body.appendParagraph(`=== Order: ${title} ===`)
+      .setFontSize(10)
+      .setFontFamily("Courier New")
+      .setBold(true);
+  body.appendParagraph("");
+
+  //Loop through form
+  for (let i=0; i<headers.length; i++) {
+    body.appendParagraph(`${headers[i]}: ${data[i]}`)
+        .setFontSize(9)
+        .setFontFamily("Courier New");
+  }
+  body.appendParagraph("");
+
+  doc.saveAndClose();
+
+  const pdf = DriveApp.getFileById(doc.getId()).getAs('application/pdf'); //convert Google Doc to PDF
+
+  //save generated pdf to target folder
+  const folder = DriveApp.getFolderById("FOLDER_ID"); //replace with target id of folder once created
+  folder.createFile(pdf).setName(`${title}.pdf`); //pdf has same name as Google Doc
+}
